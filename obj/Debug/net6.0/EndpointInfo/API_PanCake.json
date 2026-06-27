@@ -1,0 +1,1576 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "PanCake Product API",
+    "description": "API để tạo và cập nhật sản phẩm trên PanCake POS",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/InventorySync/background-service-status": {
+      "get": {
+        "tags": [
+          "InventorySync"
+        ],
+        "summary": "🔍 Kiểm tra trạng thái Background Service",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/InventorySync/sync": {
+      "post": {
+        "tags": [
+          "InventorySync"
+        ],
+        "summary": "Đồng bộ tồn kho từ ERP lên PanCake\r\nWarehouse IDs sẽ được tự động lấy từ thông tin sản phẩm trên PanCake",
+        "description": "Sample request:\r\n\r\n    POST /api/InventorySync/sync\r\n    {\r\n        \"shopId\": 1635971586,\r\n        \"maVt\": \"TEST323\",\r\n        \"remainQuantity\": 50\r\n    }\r\n    \r\nAPI sẽ:\r\n1. Tìm product variation trên PanCake theo ma_vt (search API)\r\n2. Tự động lấy tất cả warehouse_id từ thông tin sản phẩm\r\n3. Cập nhật số lượng tồn cho tất cả các kho với giá trị remainQuantity",
+        "requestBody": {
+          "description": "Thông tin đồng bộ (ShopId, MaVt, RemainQuantity)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventorySyncRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventorySyncRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventorySyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySyncResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySyncResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySyncResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/api/InventorySync/search-product": {
+      "get": {
+        "tags": [
+          "InventorySync"
+        ],
+        "summary": "Tìm kiếm thông tin product variation theo mã vật tư",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Shop ID trên PanCake",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "maVt",
+            "in": "query",
+            "description": "Mã vật tư",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductVariationInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductVariationInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductVariationInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/api/InventorySync/queue": {
+      "get": {
+        "tags": [
+          "InventorySync"
+        ],
+        "summary": "🧪 TEST ENDPOINT: Xem danh sách queue và trigger xử lý manual",
+        "parameters": [
+          {
+            "name": "process",
+            "in": "query",
+            "description": "Nếu true, sẽ trigger xử lý ngay (default: false)",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Product/create": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "summary": "Tạo sản phẩm mới",
+        "description": "Các trường BẮT BUỘC:\r\n- Name (string): Tên sản phẩm\r\n- Weight (int): Trọng lượng sản phẩm\r\n\r\nLƯU Ý: Chỉ cần truyền API Key, hệ thống sẽ tự động lấy Shop ID\r\n\r\nVí dụ request:\r\n\r\n    POST /api/Product/create?apiKey=your_api_key\r\n    {\r\n        \"name\": \"Áo sơ mi nam\",\r\n        \"weight\": 100,\r\n        \"categoryIds\": [1290021044, 201250699],\r\n        \"noteProduct\": \"Ghi chú sản phẩm\",\r\n        \"productAttributes\": [\r\n            {\r\n                \"name\": \"Màu\",\r\n                \"values\": [\"Đen\", \"Trắng\", \"Đỏ\"]\r\n            },\r\n            {\r\n                \"name\": \"Size\",\r\n                \"values\": [\"S\", \"M\", \"L\"]\r\n            }\r\n        ],\r\n        \"tags\": [193, 51],\r\n        \"variations\": [\r\n            {\r\n                \"fields\": [\r\n                    {\"name\": \"Màu\", \"value\": \"Trắng\"},\r\n                    {\"name\": \"Size\", \"value\": \"M\"}\r\n                ],\r\n                \"images\": [\"https://example.com/image.jpg\"],\r\n                \"lastImportedPrice\": 30000,\r\n                \"retailPrice\": 140000,\r\n                \"barcode\": \"BARCODE123\",\r\n                \"customId\": \"VCUSTOMID\"\r\n            }\r\n        ],\r\n        \"customId\": \"PCUSTOMID\",\r\n        \"isPublished\": true\r\n    }",
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "query",
+            "description": "API Key để authenticate với PanCake (tự động lấy Shop ID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Thông tin sản phẩm cần tạo",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Product/update": {
+      "put": {
+        "tags": [
+          "Product"
+        ],
+        "summary": "Cập nhật sản phẩm",
+        "description": "LƯU Ý: \r\n- Chỉ cần truyền API Key, hệ thống sẽ tự động lấy Shop ID\r\n- Với endpoint Update thì KHÔNG cần truyền đầy đủ tất cả trường\r\n- Chỉ truyền các trường bạn muốn cập nhật\r\n\r\nVí dụ request:\r\n\r\n    PUT /api/Product/update?productId=3487e126-b0d9-4dae-89a9-ee60bef2f4e9&apiKey=your_api_key\r\n    {\r\n        \"name\": \"Áo sơ mi nam - Updated\",\r\n        \"retailPrice\": 150000,\r\n        \"variations\": [\r\n            {\r\n                \"id\": \"3c3aca82-030e-4708-a75b-b2eaf538a2f5\",\r\n                \"retailPrice\": 150000\r\n            }\r\n        ]\r\n    }",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "description": "ID của sản phẩm cần cập nhật",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "description": "API Key để authenticate với PanCake (tự động lấy Shop ID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Thông tin sản phẩm cần cập nhật (chỉ truyền các trường cần thay đổi)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectPanCakeApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SyncOrder/sync-order": {
+      "post": {
+        "tags": [
+          "SyncOrder"
+        ],
+        "summary": "Đồng bộ 1 đơn hàng từ PanCake về ERP",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Shop ID từ PanCake",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "orderId",
+            "in": "query",
+            "description": "Order ID từ PanCake",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/api/SyncOrder/sync-orders-bulk": {
+      "post": {
+        "tags": [
+          "SyncOrder"
+        ],
+        "summary": "Đồng bộ nhiều đơn hàng theo danh sách",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SyncOrderRequest"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SyncOrderRequest"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SyncOrderRequest"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SyncOrder/test-connection": {
+      "get": {
+        "tags": [
+          "SyncOrder"
+        ],
+        "summary": "Test connection đến PanCake API",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "orderId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SyncOrder/check-token": {
+      "get": {
+        "tags": [
+          "SyncOrder"
+        ],
+        "summary": "Kiểm tra token trong bảng dmkb_api (DEBUG endpoint)",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SyncOrder/save-token": {
+      "post": {
+        "tags": [
+          "SyncOrder"
+        ],
+        "summary": "Lưu hoặc cập nhật token cho shop (INSERT/UPDATE dmkb_api)",
+        "requestBody": {
+          "description": "Thông tin shop và token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/WeatherForecast": {
+      "get": {
+        "tags": [
+          "WeatherForecast"
+        ],
+        "operationId": "GetWeatherForecast",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Webhook": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Endpoint webhook chung để nhận tất cả sự kiện từ PanCake (Order, Customer, v.v.)",
+        "description": "Endpoint CHUNG này có thể nhận mọi loại webhook từ PanCake:\r\n- Đơn hàng (type: \"orders\")\r\n- Khách hàng (type: \"customers\")\r\n- Các loại khác trong tương lai\r\n\r\nPanCake sẽ tự động gửi field \"type\" trong webhook để phân biệt loại sự kiện.\r\n\r\nĐỂ SỬ DỤNG:\r\n1. Đăng ký URL này trong PanCake: https://your-domain.com/api/webhook\r\n2. PanCake sẽ gửi tất cả webhook về URL này\r\n3. API sẽ tự động phân loại và xử lý dựa trên field \"type\"",
+        "requestBody": {
+          "description": "Dữ liệu webhook từ PanCake",
+          "content": {
+            "application/json": {
+              "schema": { }
+            },
+            "text/json": {
+              "schema": { }
+            },
+            "application/*+json": {
+              "schema": { }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Webhook/order": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Nhận webhook từ PanCake khi có đơn hàng mới hoặc thay đổi",
+        "description": "Endpoint này sẽ nhận các sự kiện từ PanCake như:\r\n- order.created: Đơn hàng mới được tạo\r\n- order.updated: Đơn hàng được cập nhật\r\n- order.confirmed: Đơn hàng được xác nhận\r\n- order.cancelled: Đơn hàng bị hủy\r\n- order.completed: Đơn hàng hoàn thành\r\n\r\nĐể sử dụng:\r\n1. Đăng ký URL webhook này trong PanCake: https://your-domain.com/api/webhook/order\r\n2. PanCake sẽ tự động gửi POST request đến endpoint này khi có sự kiện\r\n\r\nVí dụ webhook data từ PanCake:\r\n\r\n    POST /api/webhook/order\r\n    {\r\n        \"event\": \"order.created\",\r\n        \"timestamp\": 1710000000,\r\n        \"data\": {\r\n            \"id\": 123456,\r\n            \"code\": \"ORDER-000123\",\r\n            \"shopId\": 789,\r\n            \"status\": \"pending\",\r\n            \"totalAmount\": 500000,\r\n            \"discountAmount\": 50000,\r\n            \"finalAmount\": 450000,\r\n            \"paymentMethod\": \"cash\",\r\n            \"paymentStatus\": \"unpaid\",\r\n            \"customer\": {\r\n                \"id\": 111,\r\n                \"name\": \"Nguyễn Văn A\",\r\n                \"phone\": \"0901234567\",\r\n                \"email\": \"customer@example.com\"\r\n            },\r\n            \"items\": [\r\n                {\r\n                    \"productId\": 222,\r\n                    \"productName\": \"Áo sơ mi\",\r\n                    \"variationId\": 333,\r\n                    \"variationName\": \"Màu Đen - Size M\",\r\n                    \"quantity\": 2,\r\n                    \"price\": 250000,\r\n                    \"totalPrice\": 500000\r\n                }\r\n            ],\r\n            \"shippingAddress\": {\r\n                \"receiverName\": \"Nguyễn Văn A\",\r\n                \"receiverPhone\": \"0901234567\",\r\n                \"fullAddress\": \"123 Đường ABC, Phường XYZ\",\r\n                \"province\": \"TP. Hồ Chí Minh\",\r\n                \"district\": \"Quận 1\",\r\n                \"ward\": \"Phường Bến Nghé\"\r\n            },\r\n            \"note\": \"Giao hàng buổi chiều\",\r\n            \"createdAt\": \"2024-03-10T10:30:00Z\",\r\n            \"updatedAt\": \"2024-03-10T10:30:00Z\"\r\n        }\r\n    }",
+        "requestBody": {
+          "description": "Dữ liệu webhook từ PanCake",
+          "content": {
+            "application/json": {
+              "schema": { }
+            },
+            "text/json": {
+              "schema": { }
+            },
+            "application/*+json": {
+              "schema": { }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Webhook/sync-order": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Đồng bộ 1 đơn hàng từ PanCake về ERP (manual sync)",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Shop ID từ PanCake",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "orderId",
+            "in": "query",
+            "description": "Order ID từ PanCake",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error"
+          }
+        }
+      }
+    },
+    "/api/Webhook/test-connection": {
+      "get": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Test connection đến PanCake API",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "orderId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Webhook/check-token": {
+      "get": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Kiểm tra token trong bảng dmkb_api (DEBUG endpoint)",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Webhook/save-token": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Lưu hoặc cập nhật token cho shop",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenWebhookRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenWebhookRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTokenWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Webhook/customer": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Nhận webhook từ PanCake khi có khách hàng mới hoặc thay đổi",
+        "description": "Endpoint này sẽ nhận các sự kiện từ PanCake như:\r\n- customer.created: Khách hàng mới được tạo\r\n- customer.updated: Khách hàng được cập nhật\r\n- customer.deleted: Khách hàng bị xóa\r\n\r\nĐể sử dụng:\r\n1. Đăng ký URL webhook này trong PanCake: https://your-domain.com/api/webhook/customer\r\n2. PanCake sẽ tự động gửi POST request đến endpoint này khi có sự kiện\r\n\r\nVí dụ webhook data từ PanCake:\r\n\r\n    POST /api/webhook/customer\r\n    {\r\n        \"id\": 123456,\r\n        \"event_type\": \"customer.created\",\r\n        \"shop_id\": 789,\r\n        \"customer_code\": \"KH-000123\",\r\n        \"name\": \"Nguyễn Văn A\",\r\n        \"phone_number\": \"0901234567\",\r\n        \"email\": \"customer@example.com\",\r\n        \"address\": \"123 Đường ABC\",\r\n        \"province_name\": \"TP. Hồ Chí Minh\",\r\n        \"district_name\": \"Quận 1\",\r\n        \"commune_name\": \"Phường Bến Nghé\",\r\n        \"customer_level_name\": \"VIP\",\r\n        \"point\": 1000,\r\n        \"total_spent\": 5000000,\r\n        \"gender\": \"male\",\r\n        \"date_of_birth\": \"1990-01-01\",\r\n        \"inserted_at\": \"2024-03-10T10:30:00Z\",\r\n        \"updated_at\": \"2024-03-10T10:30:00Z\",\r\n        \"timestamp\": 1710000000,\r\n        \"signature\": \"abc123...\"\r\n    }",
+        "requestBody": {
+          "description": "Dữ liệu webhook từ PanCake",
+          "content": {
+            "application/json": {
+              "schema": { }
+            },
+            "text/json": {
+              "schema": { }
+            },
+            "application/*+json": {
+              "schema": { }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Webhook/customers": {
+      "get": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Lấy danh sách customer webhooks đã nhận",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "Số bản ghi bỏ qua (phân trang)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "description": "Số bản ghi lấy (phân trang)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "isProcessed",
+            "in": "query",
+            "description": "Lọc theo trạng thái xử lý (null = tất cả)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Webhook/test": {
+      "get": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Endpoint test để kiểm tra webhook hoạt động",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateProductRequest": {
+        "required": [
+          "name",
+          "weight"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string",
+            "description": "BẮT BUỘC: Tên sản phẩm"
+          },
+          "weight": {
+            "type": "integer",
+            "description": "BẮT BUỘC: Trọng lượng sản phẩm",
+            "format": "int32"
+          },
+          "measureGroupId": {
+            "type": "integer",
+            "description": "Mã nhóm đơn vị tính (ví dụ: 58)",
+            "format": "int32",
+            "nullable": true
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Danh sách mã danh mục",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "description": "Ghi chú nội bộ",
+            "nullable": true
+          },
+          "noteProduct": {
+            "type": "string",
+            "description": "Ghi chú sản phẩm",
+            "nullable": true
+          },
+          "productAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            },
+            "description": "Thuộc tính sản phẩm (Màu, Size, v.v.)",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Danh sách mã thẻ",
+            "nullable": true
+          },
+          "customId": {
+            "type": "string",
+            "description": "Mã tùy chỉnh sản phẩm",
+            "nullable": true
+          },
+          "isPublished": {
+            "type": "boolean",
+            "description": "Trạng thái xuất bản (true/false)",
+            "nullable": true
+          },
+          "variations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductVariation"
+            },
+            "description": "Danh sách mẫu mã/biến thể",
+            "nullable": true
+          },
+          "variationsWarehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationWarehouse"
+            },
+            "description": "Thông tin tồn kho",
+            "nullable": true
+          },
+          "materials": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Danh sách mã nguyên liệu",
+            "nullable": true
+          },
+          "keyword": {
+            "type": "string",
+            "description": "Từ khóa tìm kiếm",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request model để tạo sản phẩm"
+      },
+      "InventorySyncRequest": {
+        "required": [
+          "maVt",
+          "remainQuantity",
+          "shopId"
+        ],
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "type": "integer",
+            "description": "BẮT BUỘC: Shop ID trên PanCake (ví dụ: 1635971586)",
+            "format": "int64"
+          },
+          "maVt": {
+            "minLength": 1,
+            "type": "string",
+            "description": "BẮT BUỘC: Mã vật tư (sẽ dùng để search product trên PanCake)"
+          },
+          "remainQuantity": {
+            "type": "integer",
+            "description": "BẮT BUỘC: Số lượng tồn kho cần cập nhật\r\nHệ thống sẽ tự động cập nhật vào tất cả các kho của sản phẩm",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request để đồng bộ tồn kho từ ERP lên PanCake\r\nWarehouse IDs sẽ được tự động lấy từ thông tin sản phẩm"
+      },
+      "InventorySyncResult": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "productId": {
+            "type": "string",
+            "nullable": true
+          },
+          "variationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "maVt": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalQuantityUpdated": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Result trả về từ inventory sync service"
+      },
+      "ObjectPanCakeApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response wrapper cho API PanCake"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "ProductAttribute": {
+        "required": [
+          "name",
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Tên thuộc tính (ví dụ: \"Màu\")"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Các giá trị của thuộc tính (ví dụ: [\"Đen\", \"Trắng\", \"Đỏ\"])"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Thuộc tính sản phẩm (Màu, Size, v.v.)"
+      },
+      "ProductInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Thông tin sản phẩm cơ bản"
+      },
+      "ProductVariation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID mẫu mã (dùng khi update)",
+            "nullable": true
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationField"
+            },
+            "description": "Các trường thuộc tính (Màu: Đen, Size: M)",
+            "nullable": true
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Hình ảnh mẫu mã (URLs)",
+            "nullable": true
+          },
+          "lastImportedPrice": {
+            "type": "integer",
+            "description": "Giá nhập",
+            "format": "int32",
+            "nullable": true
+          },
+          "retailPrice": {
+            "type": "integer",
+            "description": "Giá bán lẻ",
+            "format": "int32",
+            "nullable": true
+          },
+          "priceAtCounter": {
+            "type": "integer",
+            "description": "Giá tại quầy",
+            "format": "int32",
+            "nullable": true
+          },
+          "weight": {
+            "type": "integer",
+            "description": "Khối lượng",
+            "format": "int32",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Mã barcode",
+            "nullable": true
+          },
+          "customId": {
+            "type": "string",
+            "description": "Mã tùy chỉnh",
+            "nullable": true
+          },
+          "isHidden": {
+            "type": "boolean",
+            "description": "Trạng thái ẩn/hiện",
+            "nullable": true
+          },
+          "variationsWarehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationWarehouse"
+            },
+            "description": "Thông tin tồn kho cho mẫu mã này",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Mẫu mã/Biến thể sản phẩm"
+      },
+      "ProductVariationInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Variation ID (UUID)",
+            "nullable": true
+          },
+          "productId": {
+            "type": "string",
+            "description": "Product ID (UUID)",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Barcode",
+            "nullable": true
+          },
+          "displayId": {
+            "type": "string",
+            "description": "Display ID",
+            "nullable": true
+          },
+          "variationsWarehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationWarehouseInfo"
+            },
+            "description": "Danh sách warehouse info",
+            "nullable": true
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductInfo"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Thông tin chi tiết của product variation"
+      },
+      "SaveTokenRequest": {
+        "required": [
+          "apiToken",
+          "shopId"
+        ],
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Shop ID từ PanCake (bắt buộc)"
+          },
+          "apiToken": {
+            "minLength": 1,
+            "type": "string",
+            "description": "API Token từ PanCake (bắt buộc) - lấy từ Settings > API trên PanCake POS"
+          },
+          "tenShop": {
+            "type": "string",
+            "description": "Tên shop (tùy chọn)",
+            "nullable": true
+          },
+          "maKhoDh": {
+            "type": "string",
+            "description": "Mã kho đơn hàng (tùy chọn) - mặc định: KHO01",
+            "nullable": true
+          },
+          "maKhoTonKho": {
+            "type": "string",
+            "description": "Mã kho tồn kho (tùy chọn) - mặc định: KHO01",
+            "nullable": true
+          },
+          "maShop": {
+            "type": "string",
+            "description": "Mã shop trong ERP (tùy chọn) - mặc định: SHOP{ShopId}",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Model request để lưu/cập nhật token cho shop"
+      },
+      "SaveTokenWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "type": "string",
+            "nullable": true
+          },
+          "apiToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "tenShop": {
+            "type": "string",
+            "nullable": true
+          },
+          "maKhoDh": {
+            "type": "string",
+            "nullable": true
+          },
+          "maKhoTonKho": {
+            "type": "string",
+            "nullable": true
+          },
+          "maShop": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Model request để lưu/cập nhật token cho shop"
+      },
+      "SyncOrderRequest": {
+        "type": "object",
+        "properties": {
+          "shopId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "measureGroupId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "noteProduct": {
+            "type": "string",
+            "nullable": true
+          },
+          "productAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            },
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "customId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPublished": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "variations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductVariation"
+            },
+            "nullable": true
+          },
+          "variationsWarehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariationWarehouse"
+            },
+            "nullable": true
+          },
+          "materials": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "keyword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request model để cập nhật sản phẩm (các trường giống CreateProductRequest nhưng không required)"
+      },
+      "VariationField": {
+        "required": [
+          "name",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Tên trường (ví dụ: \"Màu\")"
+          },
+          "value": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Giá trị (ví dụ: \"Đen\")"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Trường thuộc tính của mẫu mã"
+      },
+      "VariationWarehouse": {
+        "required": [
+          "warehouseId"
+        ],
+        "type": "object",
+        "properties": {
+          "remainQuantity": {
+            "type": "integer",
+            "description": "Số lượng tồn",
+            "format": "int32"
+          },
+          "warehouseId": {
+            "minLength": 1,
+            "type": "string",
+            "description": "Mã kho"
+          },
+          "batchPosition": {
+            "type": "string",
+            "description": "Vị trí lô",
+            "nullable": true
+          },
+          "shelfPosition": {
+            "type": "string",
+            "description": "Vị trí kệ",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Thông tin tồn kho"
+      },
+      "VariationWarehouseInfo": {
+        "type": "object",
+        "properties": {
+          "warehouseId": {
+            "type": "string",
+            "nullable": true
+          },
+          "remainQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "batchPosition": {
+            "type": "string",
+            "nullable": true
+          },
+          "shelfPosition": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Thông tin warehouse của variation"
+      },
+      "WeatherForecast": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "temperatureC": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "temperatureF": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,138 @@
+Using launch settings from D:\API_PanCake2\API_PanCake\API_PanCake\Properties\launchSettings.json...
+warn: Program[0]
+      🔧 [PROGRAM] InventorySyncBackgroundService has been registered
+warn: Program[0]
+      🔧 [PROGRAM] Environment: Development
+warn: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      🔧 [CONSTRUCTOR] InventorySyncBackgroundService initialized
+warn: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      🔧 [CONFIG] Enabled=True, Interval=180 seconds
+warn: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      🚀 [STARTUP] InventorySyncBackgroundService.ExecuteAsync() called
+warn: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      🚀 [STARTUP] Enabled=True, Interval=180 seconds
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      🚀 InventorySyncBackgroundService started - Interval: 180 seconds
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      ⏳ Waiting 5 seconds before first run...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\API_PanCake2\API_PanCake\API_PanCake\
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: API_PanCake.Controllers.WebhookController[0]
+      === BẮT ĐẦU ĐỒNG BỘ ĐƠN HÀNG (MANUAL) ===
+info: API_PanCake.Controllers.WebhookController[0]
+      Shop ID: 1021949977, Order ID: 260624VH8GQQDY
+info: API_PanCake.Services.PanCakeOrderService[0]
+      === BẮT ĐẦU LẤY THÔNG TIN ĐƠN HÀNG ===
+info: API_PanCake.Services.PanCakeOrderService[0]
+      Input - ShopId: 1021949977, OrderIdOrCode: 260624VH8GQQDY
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔍 === TÌM KIẾM API KEY ===
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔍 Shop ID input: 1021949977 (type: Int32)
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔍 Shop ID string: '1021949977'
+warn: Microsoft.EntityFrameworkCore.Model.Validation[30000]
+      No store type was specified for the decimal property 'TotalQuantity' on entity type 'InventorySyncQueueEntity'. This will cause values to be silently truncated if they do not fit in the default precision and scale. Explicitly specify the SQL server column type that can accommodate all the values in 'OnModelCreating' using 'HasColumnType', specify precision and scale using 'HasPrecision', or configure a value converter using 'HasConversion'.
+info: Microsoft.EntityFrameworkCore.Infrastructure[10403]
+      Entity Framework Core 6.0.33 initialized 'AppDbContext' using provider 'Microsoft.EntityFrameworkCore.SqlServer:6.0.33' with options: None
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (86ms) [Parameters=[@__shopIdStr_0='?' (Size = 128)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [d].[id_shop], [d].[datetime0], [d].[datetime2], [d].[key_api], [d].[ma_kho_dh], [d].[ma_kho_ton_kho], [d].[ma_shop], [d].[status], [d].[ten_shop], [d].[user_id0], [d].[user_id2]
+      FROM [dmkb_api] AS [d]
+      WHERE (LTRIM(RTRIM([d].[id_shop])) = @__shopIdStr_0) AND ([d].[status] = N'1')
+info: API_PanCake.Services.PanCakeOrderService[0]
+      ✅ TÌM THẤY shop trong database!
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Shop ID: 1021949977
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Tên shop: Clara_VN
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Status: 1
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Mã kho DH: (null)
+info: API_PanCake.Services.PanCakeOrderService[0]
+      ✅ Token hợp lệ:
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Length: 32 chars
+info: API_PanCake.Services.PanCakeOrderService[0]
+         - Preview: c511d321c1154193a70bbc8e03cc64...
+info: API_PanCake.Services.PanCakeOrderService[0]
+      ✅ Đã lấy token thành công - Length: 32 chars
+info: API_PanCake.Services.PanCakeOrderService[0]
+      📞 Đang gọi PanCake API: https://pos.pages.fm/api/v1/shops/1021949977/orders/260624VH8GQQDY?api_key=***
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔐 API Key preview: c511d321c1154193a70b...
+info: System.Net.Http.HttpClient.Default.LogicalHandler[100]
+      Start processing HTTP request GET https://pos.pages.fm/api/v1/shops/1021949977/orders/260624VH8GQQDY?api_key=c511d321c1154193a70bbc8e03cc64e6
+info: System.Net.Http.HttpClient.Default.ClientHandler[100]
+      Sending HTTP request GET https://pos.pages.fm/api/v1/shops/1021949977/orders/260624VH8GQQDY?api_key=c511d321c1154193a70bbc8e03cc64e6
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      ⏰ [InventorySync] Starting periodic check at 06/24/2026 19:41:14
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      === BẮT ĐẦU XỬ LÝ ĐỒNG BỘ TỒN KHO ===
+info: Microsoft.EntityFrameworkCore.Infrastructure[10403]
+      Entity Framework Core 6.0.33 initialized 'AppDbContext' using provider 'Microsoft.EntityFrameworkCore.SqlServer:6.0.33' with options: None
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (38ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(@__p_0) [i].[Id], [i].[CreatedAt], [i].[ErrorMessage], [i].[MaVt], [i].[ProcessedAt], [i].[RetryCount], [i].[ShopId], [i].[Status], [i].[TotalQuantity]
+      FROM [InventorySyncQueue] AS [i]
+      WHERE ([i].[Status] = CAST(0 AS tinyint)) AND ([i].[RetryCount] < 3)
+      ORDER BY [i].[CreatedAt]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (38ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM [InventorySyncQueue] AS [i]
+      WHERE [i].[Status] = CAST(3 AS tinyint)
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      ℹ️ Có 3 mã vật tư đã Failed (đã bỏ qua, không xử lý lại)
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      ✅ Không có mã vật tư nào cần đồng bộ
+info: API_PanCake.BackgroundServices.InventorySyncBackgroundService[0]
+      ⏸️ [InventorySync] Waiting 180 seconds until next check...
+info: System.Net.Http.HttpClient.Default.ClientHandler[101]
+      Received HTTP response headers after 1303.071ms - 200
+info: System.Net.Http.HttpClient.Default.LogicalHandler[101]
+      End processing HTTP request after 1313.9007ms - 200
+info: API_PanCake.Services.PanCakeOrderService[0]
+      📥 Response Status: OK - OK
+info: API_PanCake.Services.PanCakeOrderService[0]
+      ✅ Lấy thông tin đơn hàng thành công từ PanCake API
+info: API_PanCake.Services.PanCakeOrderService[0]
+      📊 Response length: 9286 chars
+info: API_PanCake.Services.PanCakeOrderService[0]
+      📄 Response preview (first 200 chars): {"data":{"warehouse_info":{"name":"Kho mặc định","address":null,"settings":null,"postcode":null,"commune_id":null,"district_id":null,"full_address":null,"province_id":null,"phone_number":null,"custom_...
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔍 Detected nested structure with 'data' wrapper
+info: API_PanCake.Services.PanCakeOrderService[0]
+      📦 Data content length: 9262 chars
+info: API_PanCake.Services.PanCakeOrderService[0]
+      🔧 Parsing JSON to PanCakeOrderDetail...
+fail: API_PanCake.Services.PanCakeOrderService[0]
+      Lỗi khi lấy chi tiết đơn hàng từ PanCake API
+      System.Text.Json.JsonException: The JSON value could not be converted to System.Nullable`1[System.Int64]. Path: $.id | LineNumber: 0 | BytePositionInLine: 8243.
+       ---> System.InvalidOperationException: Cannot get the value of a token type 'String' as a number.
+         at System.Text.Json.Utf8JsonReader.TryGetInt64(Int64& value)
+         at System.Text.Json.Utf8JsonReader.GetInt64()
+         at System.Text.Json.Serialization.Converters.Int64Converter.Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.NullableConverter`1.Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.ReadJsonAndSetMember(Object obj, ReadStack& state, Utf8JsonReader& reader)
+         at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryRead(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options, ReadStack& state, T& value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options, ReadStack& state, T& value)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, JsonSerializerOptions options, ReadStack& state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack& state, Utf8JsonReader& reader, Exception ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader& reader, JsonSerializerOptions options, ReadStack& state)
+         at System.Text.Json.JsonSerializer.ReadFromSpan[TValue](ReadOnlySpan`1 utf8Json, JsonTypeInfo jsonTypeInfo, Nullable`1 actualByteCount)
+         at System.Text.Json.JsonSerializer.ReadFromSpan[TValue](ReadOnlySpan`1 json, JsonTypeInfo jsonTypeInfo)
+         at System.Text.Json.JsonSerializer.Deserialize[TValue](String json, JsonSerializerOptions options)
+         at API_PanCake.Services.PanCakeOrderService.GetOrderDetailAsync(Int32 shopId, String orderIdOrCode) in D:\API_PanCake2\API_PanCake\API_PanCake\Services\PanCakeOrderService.cs:line 96
+warn: API_PanCake.Controllers.WebhookController[0]
+      Không lấy được thông tin đơn hàng từ PanCake

@@ -1,0 +1,1361 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>API_PanCake</name>
+    </assembly>
+    <members>
+        <member name="T:API_PanCake.BackgroundServices.InventorySyncBackgroundService">
+            <summary>
+            Background service để đồng bộ tồn kho từ cdvt13 lên PanCake
+            Có thể enable/disable và config interval qua appsettings.json
+            </summary>
+        </member>
+        <member name="M:API_PanCake.BackgroundServices.InventorySyncBackgroundService.GetTotalInventoryFromCdvt13Async(API_PanCake.Data.AppDbContext,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lấy tổng tồn kho từ bảng cdvt13 theo ma_vt
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Controllers.InventorySyncController">
+            <summary>
+            Controller để đồng bộ tồn kho từ ERP lên PanCake
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.InventorySyncController.GetBackgroundServiceStatus">
+            <summary>
+            🔍 Kiểm tra trạng thái Background Service
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.InventorySyncController.SyncInventory(API_PanCake.Models.InventorySyncRequest)">
+            <summary>
+            Đồng bộ tồn kho từ ERP lên PanCake
+            Warehouse IDs sẽ được tự động lấy từ thông tin sản phẩm trên PanCake
+            </summary>
+            <param name="request">Thông tin đồng bộ (ShopId, MaVt, RemainQuantity)</param>
+            <returns>Kết quả đồng bộ</returns>
+            <remarks>
+            Sample request:
+            
+                POST /api/InventorySync/sync
+                {
+                    "shopId": 1635971586,
+                    "maVt": "TEST323",
+                    "remainQuantity": 50
+                }
+                
+            API sẽ:
+            1. Tìm product variation trên PanCake theo ma_vt (search API)
+            2. Tự động lấy tất cả warehouse_id từ thông tin sản phẩm
+            3. Cập nhật số lượng tồn cho tất cả các kho với giá trị remainQuantity
+            </remarks>
+        </member>
+        <member name="M:API_PanCake.Controllers.InventorySyncController.SearchProduct(System.Int64,System.String)">
+            <summary>
+            Tìm kiếm thông tin product variation theo mã vật tư
+            </summary>
+            <param name="shopId">Shop ID trên PanCake</param>
+            <param name="maVt">Mã vật tư</param>
+            <returns>Thông tin product variation</returns>
+        </member>
+        <member name="M:API_PanCake.Controllers.InventorySyncController.GetQueueStatus(System.Boolean)">
+            <summary>
+            🧪 TEST ENDPOINT: Xem danh sách queue và trigger xử lý manual
+            </summary>
+            <param name="process">Nếu true, sẽ trigger xử lý ngay (default: false)</param>
+            <returns>Danh sách items trong queue</returns>
+        </member>
+        <member name="M:API_PanCake.Controllers.ProductController.CreateProduct(System.String,API_PanCake.Models.CreateProductRequest)">
+            <summary>
+            Tạo sản phẩm mới
+            </summary>
+            <param name="apiKey">API Key để authenticate với PanCake (tự động lấy Shop ID)</param>
+            <param name="request">Thông tin sản phẩm cần tạo</param>
+            <returns></returns>
+            <remarks>
+            Các trường BẮT BUỘC:
+            - Name (string): Tên sản phẩm
+            - Weight (int): Trọng lượng sản phẩm
+            
+            LƯU Ý: Chỉ cần truyền API Key, hệ thống sẽ tự động lấy Shop ID
+            
+            Ví dụ request:
+            
+                POST /api/Product/create?apiKey=your_api_key
+                {
+                    "name": "Áo sơ mi nam",
+                    "weight": 100,
+                    "categoryIds": [1290021044, 201250699],
+                    "noteProduct": "Ghi chú sản phẩm",
+                    "productAttributes": [
+                        {
+                            "name": "Màu",
+                            "values": ["Đen", "Trắng", "Đỏ"]
+                        },
+                        {
+                            "name": "Size",
+                            "values": ["S", "M", "L"]
+                        }
+                    ],
+                    "tags": [193, 51],
+                    "variations": [
+                        {
+                            "fields": [
+                                {"name": "Màu", "value": "Trắng"},
+                                {"name": "Size", "value": "M"}
+                            ],
+                            "images": ["https://example.com/image.jpg"],
+                            "lastImportedPrice": 30000,
+                            "retailPrice": 140000,
+                            "barcode": "BARCODE123",
+                            "customId": "VCUSTOMID"
+                        }
+                    ],
+                    "customId": "PCUSTOMID",
+                    "isPublished": true
+                }
+            </remarks>
+        </member>
+        <member name="M:API_PanCake.Controllers.ProductController.UpdateProduct(System.String,System.String,API_PanCake.Models.UpdateProductRequest)">
+            <summary>
+            Cập nhật sản phẩm
+            </summary>
+            <param name="productId">ID của sản phẩm cần cập nhật</param>
+            <param name="apiKey">API Key để authenticate với PanCake (tự động lấy Shop ID)</param>
+            <param name="request">Thông tin sản phẩm cần cập nhật (chỉ truyền các trường cần thay đổi)</param>
+            <returns></returns>
+            <remarks>
+            LƯU Ý: 
+            - Chỉ cần truyền API Key, hệ thống sẽ tự động lấy Shop ID
+            - Với endpoint Update thì KHÔNG cần truyền đầy đủ tất cả trường
+            - Chỉ truyền các trường bạn muốn cập nhật
+            
+            Ví dụ request:
+            
+                PUT /api/Product/update?productId=3487e126-b0d9-4dae-89a9-ee60bef2f4e9&amp;apiKey=your_api_key
+                {
+                    "name": "Áo sơ mi nam - Updated",
+                    "retailPrice": 150000,
+                    "variations": [
+                        {
+                            "id": "3c3aca82-030e-4708-a75b-b2eaf538a2f5",
+                            "retailPrice": 150000
+                        }
+                    ]
+                }
+            </remarks>
+        </member>
+        <member name="T:API_PanCake.Controllers.SyncOrderController">
+            <summary>
+            Controller để đồng bộ đơn hàng từ PanCake về ERP
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.SyncOrderController.SyncOrder(System.Int32,System.String)">
+            <summary>
+            Đồng bộ 1 đơn hàng từ PanCake về ERP
+            </summary>
+            <param name="shopId">Shop ID từ PanCake</param>
+            <param name="orderId">Order ID từ PanCake</param>
+            <returns>Kết quả đồng bộ</returns>
+        </member>
+        <member name="M:API_PanCake.Controllers.SyncOrderController.SyncOrdersBulk(System.Collections.Generic.List{API_PanCake.Controllers.SyncOrderRequest})">
+            <summary>
+            Đồng bộ nhiều đơn hàng theo danh sách
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.SyncOrderController.TestConnection(System.Int32,System.String)">
+            <summary>
+            Test connection đến PanCake API
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.SyncOrderController.CheckToken(System.Int32)">
+            <summary>
+            Kiểm tra token trong bảng dmkb_api (DEBUG endpoint)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.SyncOrderController.SaveToken(API_PanCake.Controllers.SaveTokenRequest)">
+            <summary>
+            Lưu hoặc cập nhật token cho shop (INSERT/UPDATE dmkb_api)
+            </summary>
+            <param name="request">Thông tin shop và token</param>
+            <returns>Kết quả lưu token</returns>
+        </member>
+        <member name="T:API_PanCake.Controllers.SaveTokenRequest">
+            <summary>
+            Model request để lưu/cập nhật token cho shop
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.ShopId">
+            <summary>
+            Shop ID từ PanCake (bắt buộc)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.ApiToken">
+            <summary>
+            API Token từ PanCake (bắt buộc) - lấy từ Settings > API trên PanCake POS
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.TenShop">
+            <summary>
+            Tên shop (tùy chọn)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.MaKhoDh">
+            <summary>
+            Mã kho đơn hàng (tùy chọn) - mặc định: KHO01
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.MaKhoTonKho">
+            <summary>
+            Mã kho tồn kho (tùy chọn) - mặc định: KHO01
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Controllers.SaveTokenRequest.MaShop">
+            <summary>
+            Mã shop trong ERP (tùy chọn) - mặc định: SHOP{ShopId}
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ReceiveWebhook(System.Text.Json.JsonElement)">
+            <summary>
+            Endpoint webhook chung để nhận tất cả sự kiện từ PanCake (Order, Customer, v.v.)
+            </summary>
+            <param name="rawData">Dữ liệu webhook từ PanCake</param>
+            <returns></returns>
+            <remarks>
+            Endpoint CHUNG này có thể nhận mọi loại webhook từ PanCake:
+            - Đơn hàng (type: "orders")
+            - Khách hàng (type: "customers")
+            - Các loại khác trong tương lai
+            
+            PanCake sẽ tự động gửi field "type" trong webhook để phân biệt loại sự kiện.
+            
+            ĐỂ SỬ DỤNG:
+            1. Đăng ký URL này trong PanCake: https://your-domain.com/api/webhook
+            2. PanCake sẽ gửi tất cả webhook về URL này
+            3. API sẽ tự động phân loại và xử lý dựa trên field "type"
+            </remarks>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ReceiveOrderWebhook(System.Text.Json.JsonElement)">
+            <summary>
+            Nhận webhook từ PanCake khi có đơn hàng mới hoặc thay đổi
+            </summary>
+            <param name="rawData">Dữ liệu webhook từ PanCake</param>
+            <returns></returns>
+            <remarks>
+            Endpoint này sẽ nhận các sự kiện từ PanCake như:
+            - order.created: Đơn hàng mới được tạo
+            - order.updated: Đơn hàng được cập nhật
+            - order.confirmed: Đơn hàng được xác nhận
+            - order.cancelled: Đơn hàng bị hủy
+            - order.completed: Đơn hàng hoàn thành
+            
+            Để sử dụng:
+            1. Đăng ký URL webhook này trong PanCake: https://your-domain.com/api/webhook/order
+            2. PanCake sẽ tự động gửi POST request đến endpoint này khi có sự kiện
+            
+            Ví dụ webhook data từ PanCake:
+            
+                POST /api/webhook/order
+                {
+                    "event": "order.created",
+                    "timestamp": 1710000000,
+                    "data": {
+                        "id": 123456,
+                        "code": "ORDER-000123",
+                        "shopId": 789,
+                        "status": "pending",
+                        "totalAmount": 500000,
+                        "discountAmount": 50000,
+                        "finalAmount": 450000,
+                        "paymentMethod": "cash",
+                        "paymentStatus": "unpaid",
+                        "customer": {
+                            "id": 111,
+                            "name": "Nguyễn Văn A",
+                            "phone": "0901234567",
+                            "email": "customer@example.com"
+                        },
+                        "items": [
+                            {
+                                "productId": 222,
+                                "productName": "Áo sơ mi",
+                                "variationId": 333,
+                                "variationName": "Màu Đen - Size M",
+                                "quantity": 2,
+                                "price": 250000,
+                                "totalPrice": 500000
+                            }
+                        ],
+                        "shippingAddress": {
+                            "receiverName": "Nguyễn Văn A",
+                            "receiverPhone": "0901234567",
+                            "fullAddress": "123 Đường ABC, Phường XYZ",
+                            "province": "TP. Hồ Chí Minh",
+                            "district": "Quận 1",
+                            "ward": "Phường Bến Nghé"
+                        },
+                        "note": "Giao hàng buổi chiều",
+                        "createdAt": "2024-03-10T10:30:00Z",
+                        "updatedAt": "2024-03-10T10:30:00Z"
+                    }
+                }
+            </remarks>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ManualSyncOrder(System.Int32,System.String)">
+            <summary>
+            Đồng bộ 1 đơn hàng từ PanCake về ERP (manual sync)
+            </summary>
+            <param name="shopId">Shop ID từ PanCake</param>
+            <param name="orderId">Order ID từ PanCake</param>
+            <returns>Kết quả đồng bộ</returns>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.TestConnection(System.Int32,System.String)">
+            <summary>
+            Test connection đến PanCake API
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.CheckToken(System.Int32)">
+            <summary>
+            Kiểm tra token trong bảng dmkb_api (DEBUG endpoint)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.SaveToken(API_PanCake.Controllers.WebhookController.SaveTokenWebhookRequest)">
+            <summary>
+            Lưu hoặc cập nhật token cho shop
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.SyncOrderToERPAsync(System.Int32,System.String,API_PanCake.Services.PanCakeOrderDetail,System.Int32)">
+            <summary>
+            Đồng bộ đơn hàng vào ERP (m65/d65/i65/c65)
+            - Check xem đơn đã sync chưa
+            - Nếu rồi: DELETE old records và INSERT new (update)
+            - Nếu chưa: INSERT new
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.DeleteOldERPRecordsAsync(API_PanCake.Data.Entities.PanCakeOrderMappingEntity)">
+            <summary>
+            Xóa records cũ trong ERP trước khi update (DELETE from m65/d65/i65/c65 hoặc m760/d760/i760/c760)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ConvertPanCakeWebhookToEntity(API_PanCake.Models.PanCakeOrderWebhook,System.String)">
+            <summary>
+            Chuyển đổi PanCake webhook (flat structure) sang entity để lưu database
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ReceiveCustomerWebhook(System.Text.Json.JsonElement)">
+            <summary>
+            Nhận webhook từ PanCake khi có khách hàng mới hoặc thay đổi
+            </summary>
+            <param name="rawData">Dữ liệu webhook từ PanCake</param>
+            <returns></returns>
+            <remarks>
+            Endpoint này sẽ nhận các sự kiện từ PanCake như:
+            - customer.created: Khách hàng mới được tạo
+            - customer.updated: Khách hàng được cập nhật
+            - customer.deleted: Khách hàng bị xóa
+            
+            Để sử dụng:
+            1. Đăng ký URL webhook này trong PanCake: https://your-domain.com/api/webhook/customer
+            2. PanCake sẽ tự động gửi POST request đến endpoint này khi có sự kiện
+            
+            Ví dụ webhook data từ PanCake:
+            
+                POST /api/webhook/customer
+                {
+                    "id": 123456,
+                    "event_type": "customer.created",
+                    "shop_id": 789,
+                    "customer_code": "KH-000123",
+                    "name": "Nguyễn Văn A",
+                    "phone_number": "0901234567",
+                    "email": "customer@example.com",
+                    "address": "123 Đường ABC",
+                    "province_name": "TP. Hồ Chí Minh",
+                    "district_name": "Quận 1",
+                    "commune_name": "Phường Bến Nghé",
+                    "customer_level_name": "VIP",
+                    "point": 1000,
+                    "total_spent": 5000000,
+                    "gender": "male",
+                    "date_of_birth": "1990-01-01",
+                    "inserted_at": "2024-03-10T10:30:00Z",
+                    "updated_at": "2024-03-10T10:30:00Z",
+                    "timestamp": 1710000000,
+                    "signature": "abc123..."
+                }
+            </remarks>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.GetCustomerWebhooks(System.Int32,System.Int32,System.Nullable{System.Boolean})">
+            <summary>
+            Lấy danh sách customer webhooks đã nhận
+            </summary>
+            <param name="skip">Số bản ghi bỏ qua (phân trang)</param>
+            <param name="take">Số bản ghi lấy (phân trang)</param>
+            <param name="isProcessed">Lọc theo trạng thái xử lý (null = tất cả)</param>
+            <returns>Danh sách customer webhooks</returns>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ProcessOrderWebhook(System.Text.Json.JsonElement,System.String)">
+            <summary>
+            Xử lý webhook ORDER từ PanCake (Private method)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.ProcessCustomerWebhook(System.Text.Json.JsonElement,System.String)">
+            <summary>
+            Xử lý webhook CUSTOMER từ PanCake (Private method)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Controllers.WebhookController.TestWebhook">
+            <summary>
+            Endpoint test để kiểm tra webhook hoạt động
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:API_PanCake.Controllers.WebhookController.SaveTokenWebhookRequest">
+            <summary>
+            Model request để lưu/cập nhật token cho shop
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Data.Entities.DmkbApiEntity">
+            <summary>
+            Entity cho bảng dmkb_api - Quản lý API key của các shop PanCake
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.TenShop">
+            <summary>
+            Tên shop
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.KeyApi">
+            <summary>
+            API Key để call PanCake API
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.MaKhoDh">
+            <summary>
+            Mã kho đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.MaKhoTonKho">
+            <summary>
+            Mã kho tồn kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.Status">
+            <summary>
+            Trạng thái (A=Active, I=Inactive)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.Datetime0">
+            <summary>
+            Ngày tạo
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.Datetime2">
+            <summary>
+            Ngày cập nhật
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.UserId0">
+            <summary>
+            User ID tạo
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.UserId2">
+            <summary>
+            User ID cập nhật
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.IdShop">
+            <summary>
+            ID Shop PanCake (dùng để match với shop_id từ webhook)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.DmkbApiEntity.MaShop">
+            <summary>
+            Mã shop
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Data.Entities.InventorySyncQueueEntity">
+            <summary>
+            Entity cho bảng InventorySyncQueue
+            Queue để lưu danh sách ma_vt cần đồng bộ tồn kho lên PanCake
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.MaVt">
+            <summary>
+            Mã vật tư cần đồng bộ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.ShopId">
+            <summary>
+            Shop ID trên PanCake (mặc định 1635971586)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.Status">
+            <summary>
+            Trạng thái: 0=Pending, 1=Processing, 2=Success, 3=Failed
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.RetryCount">
+            <summary>
+            Số lần thử
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.CreatedAt">
+            <summary>
+            Thời gian tạo
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.ProcessedAt">
+            <summary>
+            Thời gian xử lý
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.ErrorMessage">
+            <summary>
+            Thông báo lỗi (nếu có)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.InventorySyncQueueEntity.TotalQuantity">
+            <summary>
+            Số lượng tồn đã tính (để debug)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Data.Entities.InventorySyncStatus">
+            <summary>
+            Enum cho trạng thái sync
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Data.Entities.PanCakeOrderMappingEntity">
+            <summary>
+            Bảng mapping giữa PanCake Order và ERP (m65/d65)
+            Dùng để track đơn hàng đã sync chưa, tránh duplicate
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.PanCakeOrderId">
+            <summary>
+            PanCake Order ID (string vì DB lưu nvarchar)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.ShopId">
+            <summary>
+            Shop ID trong PanCake
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.SttRec">
+            <summary>
+            STT_REC trong ERP (m65/d65) - Format: A000000001DXB (13 chars)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.MaCt">
+            <summary>
+            Mã chứng từ (ma_ct) - VD: DXB (Xuất bán)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.SoCt">
+            <summary>
+            Số chứng từ (so_ct)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.Partition">
+            <summary>
+            Partition của bảng (YYYYMM) - VD: 202603
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.FirstSyncedAt">
+            <summary>
+            Lần đầu đồng bộ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.LastSyncedAt">
+            <summary>
+            Lần cuối cập nhật
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.SyncCount">
+            <summary>
+            Số lần đồng bộ (update)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.LastStatus">
+            <summary>
+            Trạng thái đơn PanCake lần cuối sync
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Data.Entities.PanCakeOrderMappingEntity.Note">
+            <summary>
+            Ghi chú
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.CreateProductRequest">
+            <summary>
+            Request model để tạo sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Name">
+            <summary>
+            BẮT BUỘC: Tên sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Weight">
+            <summary>
+            BẮT BUỘC: Trọng lượng sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.MeasureGroupId">
+            <summary>
+            Mã nhóm đơn vị tính (ví dụ: 58)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.CategoryIds">
+            <summary>
+            Danh sách mã danh mục
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Note">
+            <summary>
+            Ghi chú nội bộ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.NoteProduct">
+            <summary>
+            Ghi chú sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.ProductAttributes">
+            <summary>
+            Thuộc tính sản phẩm (Màu, Size, v.v.)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Tags">
+            <summary>
+            Danh sách mã thẻ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.CustomId">
+            <summary>
+            Mã tùy chỉnh sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.IsPublished">
+            <summary>
+            Trạng thái xuất bản (true/false)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Variations">
+            <summary>
+            Danh sách mẫu mã/biến thể
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.VariationsWarehouses">
+            <summary>
+            Thông tin tồn kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Materials">
+            <summary>
+            Danh sách mã nguyên liệu
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.CreateProductRequest.Keyword">
+            <summary>
+            Từ khóa tìm kiếm
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.UpdateProductRequest">
+            <summary>
+            Request model để cập nhật sản phẩm (các trường giống CreateProductRequest nhưng không required)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ProductAttribute">
+            <summary>
+            Thuộc tính sản phẩm (Màu, Size, v.v.)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductAttribute.Name">
+            <summary>
+            Tên thuộc tính (ví dụ: "Màu")
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductAttribute.Values">
+            <summary>
+            Các giá trị của thuộc tính (ví dụ: ["Đen", "Trắng", "Đỏ"])
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ProductVariation">
+            <summary>
+            Mẫu mã/Biến thể sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.Id">
+            <summary>
+            ID mẫu mã (dùng khi update)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.Fields">
+            <summary>
+            Các trường thuộc tính (Màu: Đen, Size: M)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.Images">
+            <summary>
+            Hình ảnh mẫu mã (URLs)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.LastImportedPrice">
+            <summary>
+            Giá nhập
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.RetailPrice">
+            <summary>
+            Giá bán lẻ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.PriceAtCounter">
+            <summary>
+            Giá tại quầy
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.Weight">
+            <summary>
+            Khối lượng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.Barcode">
+            <summary>
+            Mã barcode
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.CustomId">
+            <summary>
+            Mã tùy chỉnh
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.IsHidden">
+            <summary>
+            Trạng thái ẩn/hiện
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariation.VariationsWarehouses">
+            <summary>
+            Thông tin tồn kho cho mẫu mã này
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.VariationField">
+            <summary>
+            Trường thuộc tính của mẫu mã
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationField.Name">
+            <summary>
+            Tên trường (ví dụ: "Màu")
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationField.Value">
+            <summary>
+            Giá trị (ví dụ: "Đen")
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.VariationWarehouse">
+            <summary>
+            Thông tin tồn kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationWarehouse.RemainQuantity">
+            <summary>
+            Số lượng tồn
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationWarehouse.WarehouseId">
+            <summary>
+            Mã kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationWarehouse.BatchPosition">
+            <summary>
+            Vị trí lô
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.VariationWarehouse.ShelfPosition">
+            <summary>
+            Vị trí kệ
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeApiResponse`1">
+            <summary>
+            Response wrapper cho API PanCake
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ShopsResponse">
+            <summary>
+            Response từ API GET /shops
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ShopInfo">
+            <summary>
+            Thông tin shop
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeWebhookRequest">
+            <summary>
+            Model nhận webhook từ PanCake
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.PanCakeWebhookRequest.Event">
+            <summary>
+            Loại sự kiện (order.created, order.updated, order.confirmed, order.cancelled, etc.)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.PanCakeWebhookRequest.Data">
+            <summary>
+            Dữ liệu đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.PanCakeWebhookRequest.Signature">
+            <summary>
+            Chữ ký để xác thực webhook
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.PanCakeWebhookRequest.Timestamp">
+            <summary>
+            Timestamp
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WebhookOrderData">
+            <summary>
+            Dữ liệu đơn hàng từ webhook
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Id">
+            <summary>
+            ID đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Code">
+            <summary>
+            Mã đơn hàng (ORDER-XXXXXX)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.ShopId">
+            <summary>
+            ID cửa hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.BranchId">
+            <summary>
+            ID chi nhánh
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Status">
+            <summary>
+            Trạng thái đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.TotalAmount">
+            <summary>
+            Tổng giá trị đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.DiscountAmount">
+            <summary>
+            Số tiền giảm giá
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.FinalAmount">
+            <summary>
+            Số tiền khách phải trả
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.PaymentMethod">
+            <summary>
+            Phương thức thanh toán
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.PaymentStatus">
+            <summary>
+            Trạng thái thanh toán
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Customer">
+            <summary>
+            Thông tin khách hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Items">
+            <summary>
+            Danh sách sản phẩm trong đơn
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.ShippingAddress">
+            <summary>
+            Địa chỉ giao hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.Note">
+            <summary>
+            Ghi chú đơn hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.CreatedAt">
+            <summary>
+            Ngày tạo đơn
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderData.UpdatedAt">
+            <summary>
+            Ngày cập nhật
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WebhookCustomer">
+            <summary>
+            Thông tin khách hàng trong webhook
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookCustomer.Id">
+            <summary>
+            ID khách hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookCustomer.Name">
+            <summary>
+            Tên khách hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookCustomer.Phone">
+            <summary>
+            Số điện thoại
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookCustomer.Email">
+            <summary>
+            Email
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WebhookOrderItem">
+            <summary>
+            Thông tin sản phẩm trong đơn hàng webhook
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.ProductId">
+            <summary>
+            ID sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.ProductName">
+            <summary>
+            Tên sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.VariationId">
+            <summary>
+            ID variation/mẫu mã
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.VariationName">
+            <summary>
+            Tên variation
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.Sku">
+            <summary>
+            SKU
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.Quantity">
+            <summary>
+            Số lượng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.Price">
+            <summary>
+            Đơn giá
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookOrderItem.TotalPrice">
+            <summary>
+            Tổng tiền (Số lượng * Đơn giá)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WebhookShippingAddress">
+            <summary>
+            Địa chỉ giao hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.ReceiverName">
+            <summary>
+            Tên người nhận
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.ReceiverPhone">
+            <summary>
+            Số điện thoại người nhận
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.FullAddress">
+            <summary>
+            Địa chỉ đầy đủ
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.Province">
+            <summary>
+            Tỉnh/Thành phố
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.District">
+            <summary>
+            Quận/Huyện
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WebhookShippingAddress.Ward">
+            <summary>
+            Phường/Xã
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeOrderWebhook">
+            <summary>
+            Model THỰC TẾ của webhook từ PanCake (flat structure)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeWebhookCustomer">
+            <summary>
+            Customer/Creator info từ webhook PanCake
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeWebhookShippingAddress">
+            <summary>
+            Shipping address từ webhook PanCake
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeWebhookItem">
+            <summary>
+            Order item từ webhook PanCake
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeWebhookVariationInfo">
+            <summary>
+            Variation info từ webhook item
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.PanCakeCustomerWebhook">
+            <summary>
+            Model THỰC TẾ của customer webhook từ PanCake (flat structure)
+            Nhận khi có sự kiện khách hàng: create, update, delete
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.CustomerBirthday">
+            <summary>
+            Birthday object trong customer webhook
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.InventorySyncRequest">
+            <summary>
+            Request để đồng bộ tồn kho từ ERP lên PanCake
+            Warehouse IDs sẽ được tự động lấy từ thông tin sản phẩm
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.InventorySyncRequest.ShopId">
+            <summary>
+            BẮT BUỘC: Shop ID trên PanCake (ví dụ: 1635971586)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.InventorySyncRequest.MaVt">
+            <summary>
+            BẮT BUỘC: Mã vật tư (sẽ dùng để search product trên PanCake)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.InventorySyncRequest.RemainQuantity">
+            <summary>
+            BẮT BUỘC: Số lượng tồn kho cần cập nhật
+            Hệ thống sẽ tự động cập nhật vào tất cả các kho của sản phẩm
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.InventoryWarehouseItem">
+            <summary>
+            Thông tin tồn kho của một kho cụ thể
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.InventoryWarehouseItem.RemainQuantity">
+            <summary>
+            Số lượng tồn
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.InventoryWarehouseItem.WarehouseId">
+            <summary>
+            BẮT BUỘC: Warehouse ID trên PanCake (UUID format)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ProductVariationSearchResponse">
+            <summary>
+            Response từ API search product variations
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationSearchResponse.Data">
+            <summary>
+            Danh sách product variations (trực tiếp là array)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ProductVariationInfo">
+            <summary>
+            Thông tin chi tiết của product variation
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.Id">
+            <summary>
+            Variation ID (UUID)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.ProductId">
+            <summary>
+            Product ID (UUID)  
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.Barcode">
+            <summary>
+            Barcode
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.DisplayId">
+            <summary>
+            Display ID
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.VariationsWarehouses">
+            <summary>
+            Danh sách warehouse info
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.ProductVariationInfo.Product">
+            <summary>
+            Thông tin sản phẩm
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.ProductInfo">
+            <summary>
+            Thông tin sản phẩm cơ bản
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.VariationWarehouseInfo">
+            <summary>
+            Thông tin warehouse của variation
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.UpdateQuantityRequest">
+            <summary>
+            Request để update quantity trên PanCake
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.UpdateQuantityResponse">
+            <summary>
+            Response từ update quantity API
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.InventorySyncResult">
+            <summary>
+            Result trả về từ inventory sync service
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WarehousesResponse">
+            <summary>
+            Response từ API GET /shops/{SHOP_ID}/warehouses
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Models.WarehouseInfo">
+            <summary>
+            Thông tin kho hàng
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WarehouseInfo.Id">
+            <summary>
+            ID kho (UUID)
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WarehouseInfo.Name">
+            <summary>
+            Tên kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WarehouseInfo.Address">
+            <summary>
+            Địa chỉ kho
+            </summary>
+        </member>
+        <member name="P:API_PanCake.Models.WarehouseInfo.IsActive">
+            <summary>
+            Trạng thái kho (true = hoạt động)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.CustomerSyncService.GetShopNameAsync(System.Int32)">
+            <summary>
+            Lấy tên shop từ bảng dmkb_api theo ShopId
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.CustomerSyncService.SanitizeShopName(System.String)">
+            <summary>
+            Sanitize tên shop để tạo mã KH hợp lệ:
+            - Bỏ khoảng trắng, ký tự đặc biệt
+            - Viết hoa
+            - Giới hạn độ dài
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.CustomerSyncService.CheckMaKhExistsAsync(System.String)">
+            <summary>
+            Kiểm tra mã KH đã tồn tại trong dmkh chưa
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.CustomerSyncService.InsertMaKhToERPAsync(API_PanCake.Models.PanCakeCustomerWebhook,System.String)">
+            <summary>
+            Insert mã KH theo shop vào bảng dmkh
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.ICustomerSyncService.SyncCustomerToERPAsync(API_PanCake.Models.PanCakeCustomerWebhook)">
+            <summary>
+            Đồng bộ khách hàng từ PanCake webhook vào ERP system (bảng dmkh)
+            </summary>
+            <param name="customerData">Dữ liệu customer từ webhook</param>
+            <returns>Kết quả đồng bộ</returns>
+        </member>
+        <member name="M:API_PanCake.Services.IOrderSyncService.SyncOrderToERPAsync(System.Int32,API_PanCake.Services.PanCakeOrderDetail,System.String)">
+            <summary>
+            Đồng bộ đơn hàng từ PanCake vào ERP system (m65/d65 tables - Xuất bán)
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Services.IPanCakeInventoryService">
+            <summary>
+            Interface cho service đồng bộ tồn kho lên PanCake
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.IPanCakeInventoryService.SyncInventoryAsync(API_PanCake.Models.InventorySyncRequest,System.String)">
+            <summary>
+            Đồng bộ tồn kho lên PanCake
+            </summary>
+            <param name="request">Thông tin đồng bộ (ShopId, MaVt, VariationsWarehouses)</param>
+            <param name="apiKey">API Key của shop trên PanCake</param>
+            <returns>Kết quả đồng bộ</returns>
+        </member>
+        <member name="M:API_PanCake.Services.IPanCakeInventoryService.SearchProductVariationByMaVtAsync(System.Int64,System.String,System.String)">
+            <summary>
+            Tìm kiếm product variation theo mã vật tư
+            </summary>
+            <param name="shopId">Shop ID</param>
+            <param name="maVt">Mã vật tư</param>
+            <param name="apiKey">API Key</param>
+            <returns>Thông tin product variation</returns>
+        </member>
+        <member name="M:API_PanCake.Services.IPanCakeService.GetShopIdAsync(System.String)">
+            <summary>
+            Lấy Shop ID từ API Key
+            </summary>
+            <param name="apiKey">API Key</param>
+            <returns>Shop ID (lấy shop đầu tiên nếu có nhiều shop)</returns>
+        </member>
+        <member name="M:API_PanCake.Services.IPanCakeService.CreateProductAsync(API_PanCake.Models.CreateProductRequest,System.String)">
+            <summary>
+            Tạo sản phẩm mới
+            </summary>
+            <param name="request">Thông tin sản phẩm cần tạo</param>
+            <param name="apiKey">API Key để authenticate</param>
+            <returns></returns>
+        </member>
+        <member name="M:API_PanCake.Services.IPanCakeService.UpdateProductAsync(System.String,API_PanCake.Models.UpdateProductRequest,System.String)">
+            <summary>
+            Cập nhật sản phẩm
+            </summary>
+            <param name="productId">ID của sản phẩm cần cập nhật</param>
+            <param name="request">Thông tin sản phẩm cần cập nhật</param>
+            <param name="apiKey">API Key để authenticate</param>
+            <returns></returns>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.IsSDFOrder(API_PanCake.Services.PanCakeOrderDetail)">
+            <summary>
+            Xác định loại phiếu:
+            - returned / returning -> SDF (m760/d760)
+            - các status khác -> DXB (m65/d65)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.GetPaymentType(System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            Map payment_method từ PanCake sang mã hình thức thanh toán trong ERP
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.InsertOrUpdateCustomerAsync(Microsoft.Data.SqlClient.SqlConnection,Microsoft.Data.SqlClient.SqlTransaction,System.Int32,API_PanCake.Services.PanCakeOrderDetail,API_PanCake.Data.Entities.DmkbApiEntity)">
+            <summary>
+            Insert hoặc Update khách hàng vào bảng dmkh
+            ma_kh = "KHLE" + SHOP_ID (cố định cho tất cả khách của shop đó)
+            Thông tin khách: ten_kh, dia_chi, dt từ shipping_address của đơn hàng
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.InsertMasterRecordAsync(Microsoft.Data.SqlClient.SqlConnection,Microsoft.Data.SqlClient.SqlTransaction,System.String,System.String,System.DateTime,System.String,System.Int32,API_PanCake.Services.PanCakeOrderDetail,API_PanCake.Data.Entities.DmkbApiEntity,System.String,System.Boolean)">
+            <summary>
+            Insert vào m65$YYYYMM (DXB - Xuất bán)
+            Bao gồm: geographic fields, ong_ba (shipper), fcode3 (đơn vị vận chuyển)
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.InsertSDFMasterRecordAsync(Microsoft.Data.SqlClient.SqlConnection,Microsoft.Data.SqlClient.SqlTransaction,System.String,System.String,System.DateTime,System.String,System.Int32,API_PanCake.Services.PanCakeOrderDetail,API_PanCake.Data.Entities.DmkbApiEntity,System.String)">
+            <summary>
+            Insert vào m760$YYYYMM (SDF - Trả hàng/Trả lại)
+            Bao gồm: geographic fields, ong_ba (shipper), fcode3 (đơn vị vận chuyển)
+            ma_gd=1, tk=131111 theo yêu cầu
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.InsertDetailRecordsAsync(Microsoft.Data.SqlClient.SqlConnection,Microsoft.Data.SqlClient.SqlTransaction,System.String,System.String,System.DateTime,System.String,System.Int32,API_PanCake.Services.PanCakeOrderDetail,API_PanCake.Data.Entities.DmkbApiEntity)">
+            <summary>
+            Insert vào d65$YYYYMM (DXB - Xuất bán) - có ma_httt
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.OrderSyncService.InsertSDFDetailRecordsAsync(Microsoft.Data.SqlClient.SqlConnection,Microsoft.Data.SqlClient.SqlTransaction,System.String,System.String,System.DateTime,System.String,System.Int32,API_PanCake.Services.PanCakeOrderDetail,API_PanCake.Data.Entities.DmkbApiEntity)">
+            <summary>
+            Insert vào d760$YYYYMM (SDF - Trả hàng) - có ma_httt
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Services.PanCakeInventoryService">
+            <summary>
+            Service để đồng bộ tồn kho từ ERP lên PanCake
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeInventoryService.SyncInventoryAsync(API_PanCake.Models.InventorySyncRequest,System.String)">
+            <summary>
+            Đồng bộ tồn kho lên PanCake
+            Bước 1: Tìm product variation theo ma_vt
+            Bước 2: Lấy warehouse IDs từ thông tin sản phẩm
+            Bước 3: Cập nhật quantity cho tất cả warehouses
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeInventoryService.SearchProductVariationByMaVtAsync(System.Int64,System.String,System.String)">
+            <summary>
+            Tìm kiếm product variation theo mã vật tư (search trong custom_id hoặc barcode)
+            API: GET /api/v1/shops/{SHOP_ID}/products/variations?api_key={API_KEY}&amp;search={ma_vt}
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeInventoryService.GetShopWarehousesAsync(System.Int64,System.String)">
+            <summary>
+            Lấy danh sách kho của shop
+            API: GET /api/v1/shops/{SHOP_ID}/warehouses?api_key={API_KEY}
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeInventoryService.UpdateQuantityAsync(System.Int64,System.String,System.Collections.Generic.List{API_PanCake.Models.InventoryWarehouseItem},System.String)">
+            <summary>
+            Cập nhật số lượng tồn kho cho variation
+            API: POST /api/v1/shops/{SHOP_ID}/variations/{VARIATION_ID}/update_quantity?api_key={API_KEY}
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeOrderService.GetOrderDetailAsync(System.Int32,System.String)">
+            <summary>
+            Lấy chi tiết đơn hàng từ PanCake API
+            </summary>
+        </member>
+        <member name="M:API_PanCake.Services.PanCakeOrderService.GetApiKeyByShopId(System.Int32)">
+            <summary>
+            Lấy API key từ bảng dmkb_api theo shop_id
+            </summary>
+        </member>
+        <member name="T:API_PanCake.Services.PanCakeOrderDetail">
+            <summary>
+            Model response từ PanCake Order API
+            </summary>
+        </member>
+        <member name="T:InventorySyncStatus">
+            <summary>
+            Enum status (duplicate for reference)
+            </summary>
+        </member>
+    </members>
+</doc>
